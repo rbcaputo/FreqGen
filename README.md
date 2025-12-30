@@ -47,7 +47,7 @@ Important: **no modulation exists in the waveform itself.** The beat is a **neur
 | Isochronic | 8-12 Hz | Pulsed tone | Softened square (rounded edges) | Same as above |
 | Isochronic | 15-30 Hz | Rhythmic gating | Short envelopes | Same as above |
 
-Square waves are often \*\*low-pass filtered\*\* to reduce harshness.
+Square waves are often **low-pass filtered** to reduce harshness.
 
 ---
 
@@ -58,7 +58,7 @@ Square waves are often \*\*low-pass filtered\*\* to reduce harshness.
 | Vibroacoustic | 20-80 Hz | Physical vibration | Continuous or pulsed | `sin(2πft)` |
 | Sub-bass audio | 20-40Hz | Speakers + body coupling | Long ramps | Same as above |
 
-This works more through \*\*mechanical sensation\*\* than hearing.
+This works more through **mechanical sensation** than hearing.
 
 ---
 
@@ -79,7 +79,7 @@ This works more through \*\*mechanical sensation\*\* than hearing.
 * The only cognitively meaningful numbers are:
 * Modulation rate
   * Temporal smoothness
-	* Stability over time
+  * Stability over time
 * The math is trivial; the perception design is not
 
 **If you strip away labels, every one of these systems reduces to:**
