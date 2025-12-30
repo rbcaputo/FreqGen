@@ -1,6 +1,4 @@
 <Solution>
-  <Project Path="FreqGen.PoC/FreqGen.PoC.csproj" Id="73cb59c7-7fd4-41c2-9385-d09e2512a4da">
-    <Deploy />
-  </Project>
+  <Project Path="FreqGen.Presets/FreqGen.Presets.csproj" Id="f7c1c6de-1ec4-49c8-b414-bcec6759df2d" />
   <Project Path="FreqGen/FreqGen.Core.csproj" />
 </Solution>
