@@ -29,8 +29,9 @@
       {
         _updateCounter = 0;
         _cachedSample = MathF.Sin(_phase);
-
         _phase += _phaseIncrement * UpdateInterval;
+
+        // Wrap phase
         if (_phase >= MathF.Tau)
           _phase -= MathF.Tau;
         else if (_phase < 0f)

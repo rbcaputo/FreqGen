@@ -25,6 +25,7 @@
       float sample = MathF.Sin(_phase);
       _phase += _phaseIncrement;
 
+      // Wrap phase
       if (_phase >= MathF.Tau)
         _phase -= MathF.Tau;
       else if (_phase < 0f)
