@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="FreqGen.App/FreqGen.App.csproj" Id="f79dca94-db88-4c1d-8585-ec67cf213ffe" />
+  <Project Path="FreqGen.App/FreqGen.App.csproj" />
   <Project Path="FreqGen.Core/FreqGen.Core.csproj" />
-  <Project Path="FreqGen.Presets/FreqGen.Presets.csproj" Id="f7c1c6de-1ec4-49c8-b414-bcec6759df2d" />
+  <Project Path="FreqGen.Presets/FreqGen.Presets.csproj" />
 </Solution>
