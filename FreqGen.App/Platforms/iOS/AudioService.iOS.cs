@@ -1,6 +1,7 @@
 ﻿using AudioToolbox;
 using AVFoundation;
 using Foundation;
+using Microsoft.Extensions.Logging;
 
 namespace FreqGen.App.Services
 {
@@ -12,6 +13,8 @@ namespace FreqGen.App.Services
     private AVAudioEngine? _avAudioEngine;
     private AVAudioSourceNode? _sourceNode;
     private AVAudioFormat? _audioFormat;
+
+    private float[] _iosRenderBuffer = new float[Core.AudioSettings.BufferSize * 4];
 
     partial void InitializePlatformAudio()
     {
@@ -28,7 +31,7 @@ namespace FreqGen.App.Services
 
       // Create audio format (mono 44.1kHz, float32)
       _audioFormat = new(
-        sampleRate: FreqGen.Core.AudioSettings.SampleRate,
+        sampleRate: Core.AudioSettings.SampleRate,
         channels: 1
       );
 
@@ -74,7 +77,7 @@ namespace FreqGen.App.Services
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine($"iOS audio start failed: {ex}");
+        _logger.LogError($"iOS audio start failed: {ex}");
         throw;
       }
     }
@@ -114,21 +117,27 @@ namespace FreqGen.App.Services
       {
         // Get the audio buffer
         AudioBuffer* buffer = audioBufferList.GetBuffer(0);
+        if (buffer is null || buffer->Data == IntPtr.Zero)
+          return -1;
+
         float* floatPtr = (float*)buffer->Data;
 
+        // Validate frameCount
+        if (frameCount > _iosRenderBuffer.Length)
+          frameCount = (uint)_iosRenderBuffer.Length;
+
         // Fill temporary buffer from engine
-        float[] tempBuffer = [frameCount];
-        _engine.FillBuffer(tempBuffer);
+        _engine.FillBuffer(_iosRenderBuffer.AsSpan(0, (int)frameCount));
 
         // Copy to output buffer
         for (int i = 0; i < frameCount; i++)
-          floatPtr[i] = tempBuffer[i];
+          floatPtr[i] = _iosRenderBuffer[i];
 
         return 0;
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine($"iOS render error: {ex}");
+        _logger.LogError($"iOS render error: {ex}");
         return -1;
       }
     }

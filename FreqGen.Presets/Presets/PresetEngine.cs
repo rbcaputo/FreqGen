@@ -39,6 +39,8 @@ namespace FreqGen.Presets.Presets
     {
       ArgumentNullException.ThrowIfNull(nameof(preset));
 
+      preset.Validate();
+
       // Stop current playback if running
       if (_audioEngine.IsPlaying)
         Stop();

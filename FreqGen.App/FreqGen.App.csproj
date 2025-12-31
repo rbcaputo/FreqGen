@@ -15,10 +15,6 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
 
-    <!-- App icons and splash -->
-    <ApplicationIcon>Resources\AppIcon\appicon.svg</ApplicationIcon>
-    <ApplicationSplashScreen>Resources\Splash\splash.svg</ApplicationSplashScreen>
-
     <!-- Android specific -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 
@@ -48,19 +44,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <MauiXaml Remove="Views\MainPage.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="Views\MainPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.90" />
-    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.90" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.20" />
+    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.20" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>

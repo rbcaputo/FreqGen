@@ -40,6 +40,19 @@
     /// </summary>
     public string[] Tags { get; init; } = [];
 
+    public void Validate()
+    {
+      if (string.IsNullOrWhiteSpace(ID))
+        throw new InvalidOperationException("Preset ID cannot be empty");
+
+      if (Layers.Length == 0)
+        throw new InvalidOperationException("Preset must have at least one layer");
+
+      foreach (LayerConfig layer in Layers)
+        if (!layer.ToLayerConfig().IsValid())
+          throw new InvalidOperationException($"Invalid layer configuration in preset {ID}");
+    }
+
     /// <summary>
     /// Convert all layers to Core LayerConfig array.
     /// </summary>

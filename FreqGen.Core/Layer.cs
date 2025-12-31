@@ -80,7 +80,7 @@ namespace FreqGen.Core
       float carrier = _carrier.NextSample();
       float lfo = _lfo.NextSample();
       float modulated = _modulator.Apply(carrier, lfo);
-      float envelope = _envelope.NextSampkle();
+      float envelope = _envelope.NextSample();
 
       return modulated * envelope * Weight;
     }

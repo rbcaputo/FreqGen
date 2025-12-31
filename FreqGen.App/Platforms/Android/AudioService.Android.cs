@@ -1,6 +1,7 @@
 ﻿using Android.Media;
 using Android.OS;
 using FreqGen.Core;
+using Microsoft.Extensions.Logging;
 
 namespace FreqGen.App.Services
 {
@@ -85,23 +86,29 @@ namespace FreqGen.App.Services
       // Set thread priority for real-time audio
       Process.SetThreadPriority(Android.OS.ThreadPriority.UrgentAudio);
 
-      while (_isAudioThreadRunning && _engine != null && _audioTrack != null)
+      while (_isAudioThreadRunning)
       {
         try
         {
+          AudioEngine? engine = _engine; // Local copy for thread safety
+          AudioTrack? audioTrack = _audioTrack;
+
+          if (engine is null || audioTrack is null || !_isAudioThreadRunning)
+            break;
+
           // Fill buffer from audio engine
-          _engine.FillBuffer(_floatBuffer);
+          engine.FillBuffer(_floatBuffer);
 
           // Convert float to PCM16
           for (int i = 0; i < _floatBuffer.Length; i++)
             _pcmBuffer[i] = (short)(_floatBuffer[i] * 32767f);
 
           // Write to audio track
-          _audioTrack.Write(_pcmBuffer, 0, _pcmBuffer.Length, WriteMode.Blocking);
+          audioTrack.Write(_pcmBuffer, 0, _pcmBuffer.Length, WriteMode.Blocking);
         }
         catch (Exception ex)
         {
-          System.Diagnostics.Debug.WriteLine($"Audio loop error: {ex}");
+          _logger.LogError($"Audio loop error: {ex}");
           break;
         }
       }

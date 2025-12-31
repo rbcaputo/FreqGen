@@ -1,14 +1,16 @@
 ﻿using FreqGen.Core;
 using FreqGen.Presets.Models;
 using FreqGen.Presets.Presets;
+using Microsoft.Extensions.Logging;
 
 namespace FreqGen.App.Services
 {
   /// <summary>
   /// Cross-platform audio service implementation.
   /// </summary>
-  public sealed partial class AudioService : IAudioService
+  public sealed partial class AudioService(ILogger<AudioService> logger) : IAudioService
   {
+    private readonly ILogger<AudioService> _logger = logger;
     private AudioEngine? _engine;
     private PresetEngine? _presetEngine;
     private bool _isInitialized;
@@ -40,7 +42,7 @@ namespace FreqGen.App.Services
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine($"Audio initialization failed: {ex}");
+        _logger.LogError($"Audio initialization failed: {ex}");
         throw;
       }
 
@@ -69,7 +71,7 @@ namespace FreqGen.App.Services
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine($"Play preset failed: {ex}");
+        _logger.LogError($"Play preset failed: {ex}");
         throw;
       }
     }
@@ -86,11 +88,11 @@ namespace FreqGen.App.Services
         // Stop platform audio
         StopPlatformAudio();
 
-        _isInitialized = false;
+        _isPlaying = false;
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine($"Stop failed: {ex}");
+        _logger.LogError($"Stop failed: {ex}");
         throw;
       }
 

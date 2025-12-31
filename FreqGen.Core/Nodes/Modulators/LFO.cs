@@ -6,7 +6,6 @@
   /// </summary>
   public sealed class LFO : IAudioNode
   {
-    private const float TwoPI = MathF.PI * 2f;
     private const int UpdateInterval = 64; // Control rate: update every 64 samples
 
     private float _phase;
@@ -18,7 +17,7 @@
     /// Set the LFO frequency (typically 0.5-30 Hz)
     /// </summary>
     public void SetFrequency(float frequency, float sampleRate) =>
-      _phaseIncrement = TwoPI * frequency / sampleRate;
+      _phaseIncrement = MathF.Tau * frequency / sampleRate;
 
     /// <summary>
     /// Get next modulation value.
@@ -32,8 +31,10 @@
         _cachedSample = MathF.Sin(_phase);
 
         _phase += _phaseIncrement * UpdateInterval;
-        if (_phase >= TwoPI)
-          _phase -= TwoPI;
+        if (_phase >= MathF.Tau)
+          _phase -= MathF.Tau;
+        else if (_phase < 0f)
+          _phase += MathF.Tau;
       }
 
       return _cachedSample;

@@ -1,4 +1,7 @@
 ﻿using FreqGen.App.Services;
+using FreqGen.App.ViewModels;
+using FreqGen.App.Views;
+using Microsoft.Extensions.Logging;
 
 namespace FreqGen.App
 {
@@ -25,11 +28,13 @@ namespace FreqGen.App
       // Register Views
       builder.Services.AddTransient<MainPage>();
 
-#if DEBUG
-
-      builder.Logging.AddDebug();
-
+      builder.Services.AddLogging(logging =>
+      {
+        logging.AddDebug();
+#if ANDROID || IOS
+        logging.SetMinimumLevel(LogLevel.Information);
 #endif
+      });
 
       return builder.Build();
     }

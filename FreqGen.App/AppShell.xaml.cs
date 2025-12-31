@@ -2,9 +2,8 @@
 {
   public sealed partial class AppShell : Shell
   {
-    public AppShell()
-    {
+    public AppShell() =>
       InitializeComponent();
-    }
+
   }
 }

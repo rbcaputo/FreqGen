@@ -4,11 +4,12 @@
   /// Main audio engine orchestrating the DSP graph.
   /// Thread-safe for parameter updates, real-time safe for audio generation.
   /// </summary>
-  public sealed class AudioEngine
+  public sealed class AudioEngine : IDisposable
   {
     private readonly Mixer _mixer;
     private readonly float _sampleRate;
     private bool _isPlaying;
+    private bool _disposed;
 
     /// <summary>
     /// Sample rate of this engine.
@@ -68,7 +69,7 @@
         ConfigureLayer(i, configs[i]);
 
       // Silence unused layers
-      for (int i = 0; i < configs.Length; i++)
+      for (int i = configs.Length; i < LayerCount; i++)
         _mixer.GetLayer(i).Weight = 0f;
     }
 
@@ -77,6 +78,8 @@
     /// </summary>
     public void Start()
     {
+      ThrowIfDisposed();
+
       if (_isPlaying)
         return;
 
@@ -101,9 +104,9 @@
     /// MUST be called from audio thread only.
     /// </summary>
     /// <param name="buffer">Output buffer to fill</param>
-    public void FillBuffer(float[] buffer)
+    public void FillBuffer(Span<float> buffer)
     {
-      ArgumentNullException.ThrowIfNull(buffer);
+      ArgumentNullException.ThrowIfNull(nameof(buffer));
 
       for (int i = 0; i < buffer.Length; i++)
         buffer[i] = _mixer.NextSample();
@@ -117,6 +120,24 @@
     {
       _mixer.ResetAll();
       _isPlaying = false;
+    }
+
+    public void Dispose()
+    {
+      if (_disposed)
+        return;
+
+      Stop();
+      Reset();
+      _disposed = true;
+    }
+
+    private void ThrowIfDisposed()
+    {
+      if (!_disposed)
+        return;
+
+      throw new ObjectDisposedException(nameof(AudioEngine));
     }
   }
 }

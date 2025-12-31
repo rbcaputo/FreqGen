@@ -6,8 +6,6 @@
   /// </summary>
   public sealed class SineOscillator : IAudioNode
   {
-    private const float TwoPI = MathF.PI * 2f;
-
     private float _phase;
     private float _phaseIncrement;
 
@@ -16,7 +14,7 @@
     /// Safe to call from any thread.
     /// </summary>
     public void SetFrequency(float frequency, float sampleRate) =>
-      _phaseIncrement = TwoPI * frequency / sampleRate;
+      _phaseIncrement = MathF.Tau * frequency / sampleRate;
 
     /// <summary>
     /// Generate the next sample.
@@ -27,8 +25,10 @@
       float sample = MathF.Sin(_phase);
       _phase += _phaseIncrement;
 
-      if (_phase >= TwoPI)
-        _phase -= TwoPI;
+      if (_phase >= MathF.Tau)
+        _phase -= MathF.Tau;
+      else if (_phase < 0f)
+        _phase += MathF.Tau;
 
       return sample;
     }

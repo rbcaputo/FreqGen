@@ -49,7 +49,7 @@
     /// Get next envelope value.
     /// </summary>
     /// <returns>Envelope amplitude [0.0, 1.0]</returns>
-    public float NextSampkle()
+    public float NextSample()
     {
       float target = _isActive ? 1f : 0f;
       float coef = _isActive ? _attackCoef : _releaseCoef;

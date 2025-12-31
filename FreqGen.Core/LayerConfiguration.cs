@@ -59,10 +59,11 @@
     /// Validate configuration values.
     /// </summary>
     public bool IsValid() =>
-      CarrierHz > 0f && CarrierHz <= AudioSettings.MaxFrequency &&
-      ModulationHz >= 0f && ModulationHz <= 100f &&
-      ModulationDepth >= 0f && ModulationDepth <= 1f &&
-      Weight >= 0f;
+    CarrierHz > AudioSettings.MinFrequency &&
+    CarrierHz <= AudioSettings.MaxFrequency &&
+    ModulationHz >= 0f && ModulationHz <= 100f &&
+    ModulationDepth >= 0f && ModulationDepth <= 1f &&
+    Weight >= 0f && Weight <= 2f;
 
     public override string ToString()
     {
