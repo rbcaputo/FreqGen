@@ -3,70 +3,128 @@
 namespace FreqGen.Presets.Presets
 {
   /// <summary>
-  /// Isochronic tone presets using high modulation depth for rhythmic pulsing.
+  /// Isochronic tone presets using high-depth amplitude modulation for rhythmic pulsing.
   /// 
   /// IMPLEMENTATION NOTE:
-  /// These presets use high-depth amplitude modulation (AM) with sine wave carriers
+  /// These presets use maximum-depth amplitude modulation (0.9-1.0) with sine wave carriers
   /// to create isochronic-like pulses. True isochronic tones use square wave gating,
-  /// but high-depth sine wave AM (0.85-1.0) produces similar entrainment effects
-  /// with less harmonic distortion and listening fatigue.
+  /// but high-depth sine wave AM produces similar entrainment effects with less
+  /// harmonic distortion and reduced listening fatigue.
   /// 
+  /// Isochronic tones are more intense than gentle brainwave AM and should be
+  /// used for shorter sessions (10-20 minutes).
   /// </summary>
   public static class IsochronicPresets
   {
+    /// <summary>
+    /// Delta range (3Hz) - Rapid physical recovery and deep rest.
+    /// Sharp pulsing for power naps and restorative breaks.
+    /// </summary>
     public static FrequencyPreset Ic_Delta_PowerNap => new()
     {
-      ID = "is_delta_01",
+      ID = "ic_delta_01",
       DisplayName = "PowerNap (3Hz)",
-      Description = "Sharp 3Hz pulses for rapid physical recovery and restorative rest.",
+      Description = "Sharp 3Hz pulses for rapid physical recovery and restorative rest. " +
+                    "Ideal for 15-20 minute power naps to quickly recharge energy levels.",
       Category = PresetCategory.Isochronic,
+      IsBeginnerFriendly = false, // Intense pulsing
+      RecommendedDuration = TimeSpan.FromMinutes(15),
+      Tags = ["nap", "recovery", "restorative", "intense"],
       Layers =
         [
-          new() { CarrierHz = 120f, ModulationHz = 3.0f, ModulationDepth = 1.0f, Weight = 1.0f }
+          LayerConfig.AmTone(120f, 3.0f, 0.95f, 1.0f, "Delta pulse carrier")
         ]
     };
 
+    /// <summary>
+    /// Theta range (6Hz) - Creative surge and deep problem-solving.
+    /// Rhythmic pulsing to bypass analytical filters and access creativity.
+    /// </summary>
     public static FrequencyPreset Ic_Theta_Creative => new()
     {
       ID = "ic_theta_01",
       DisplayName = "Creative Surge (6Hz)",
-      Description = "Rhythmic pulsing at 6Hz to bypass analytical filters and access creativity.",
+      Description = "Rhythmic pulsing at 6Hz to bypass analytical filters and access deep creativity. " +
+                    "Excellent for brainstorming, artistic work, and innovative problem-solving.",
       Category = PresetCategory.Isochronic,
+      IsBeginnerFriendly = false,
+      RecommendedDuration = TimeSpan.FromMinutes(20),
+      Tags = ["creative", "brainstorming", "innovation", "theta"],
       Layers =
         [
-          new() { CarrierHz = 180f, ModulationHz = 6.0f, ModulationDepth = 1.0f, Weight = 1.0f }
+          LayerConfig.AmTone(180f, 6.0f, 0.9f, 1.0f, "Theta pulse carrier")
         ]
     };
 
+    /// <summary>
+    /// Alpha range (10Hz) - Deep stress release and mental clarity.
+    /// Powerful pulsing for rapid stress reduction and clearing mental fog.
+    /// </summary>
     public static FrequencyPreset Ic_Alpha_Unwind => new()
     {
       ID = "ic_alpha_01",
       DisplayName = "Deep Unwind (10Hz)",
-      Description = "10Hz pulses for stress release and clearing mental fog.",
+      Description = "Powerful 10Hz pulses for rapid stress release and clearing mental fog. " +
+                    "Use after intense work sessions or during high-stress periods.",
       Category = PresetCategory.Isochronic,
+      IsBeginnerFriendly = false,
+      RecommendedDuration = TimeSpan.FromMinutes(15),
+      Tags = ["stress-relief", "clarity", "alpha", "unwinding"],
       Layers =
         [
-          new() { CarrierHz = 240f, ModulationHz = 10.0f, ModulationDepth = 1.0f, Weight = 1.0f }
+          LayerConfig.AmTone(240f, 10.0f, 0.9f, 1.0f, "Alpha pulse carrier")
         ]
     };
 
+    /// <summary>
+    /// Beta range (15Hz) - High-intensity focus and concentration.
+    /// Intense pulsing for demanding cognitive work and study sessions.
+    /// </summary>
     public static FrequencyPreset Ic_Beta_Focus => new()
     {
       ID = "ic_beta_01",
       DisplayName = "High Focus (15Hz)",
-      Description = "Intense 15Hz pulsing for study, coding, or high-performance cognitive work.",
+      Description = "Intense 15Hz pulsing for study, coding, or high-performance cognitive work. " +
+                    "Maximum concentration and alertness. Use for short bursts only.",
       Category = PresetCategory.Isochronic,
+      IsBeginnerFriendly = false, // Very intense
+      RecommendedDuration = TimeSpan.FromMinutes(15),
+      Tags = ["focus", "study", "concentration", "cognitive", "beta"],
       Layers =
         [
-          new() { CarrierHz = 300f, ModulationHz = 15.0f, ModulationDepth = 1.0f, Weight = 1.0f }
+          LayerConfig.AmTone(300f, 15.0f, 1.0f, 1.0f, "Beta pulse carrier")
         ]
     };
 
-    public static IEnumerable<FrequencyPreset> All =>
+    /// <summary>
+    /// SMR range (13Hz) - Sensorimotor rhythm for calm alertness.
+    /// Balanced state between relaxation and focus, ideal for sustained work.
+    /// </summary>
+    public static FrequencyPreset Ic_SMR_CalmAlert => new()
+    {
+      ID = "ic_smr_01",
+      DisplayName = "Calm Alertness (13Hz)",
+      Description = "Sensorimotor rhythm at 13Hz promotes relaxed yet alert state. " +
+                    "Perfect for sustained focus without mental fatigue. Used in neurofeedback training.",
+      Category = PresetCategory.Isochronic,
+      IsBeginnerFriendly = true, // More gentle than other isochronic presets
+      RecommendedDuration = TimeSpan.FromMinutes(25),
+      Tags = ["focus", "calm", "smr", "sustained"],
+      Layers =
+        [
+          LayerConfig.AmTone(260f, 13.0f, 0.8f, 1.0f, "SMR pulse carrier")
+        ]
+    };
+
+    /// <summary>
+    /// Returns all isochronic presets in ascending frequency order.
+    /// </summary>
+    public static IReadOnlyList<FrequencyPreset> All =>
       [
         Ic_Delta_PowerNap,
         Ic_Theta_Creative,
         Ic_Alpha_Unwind,
+        Ic_SMR_CalmAlert,
         Ic_Beta_Focus
       ];
   }
