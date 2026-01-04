@@ -74,14 +74,18 @@ namespace FreqGen.Core
         _lfo.Process(modulatorSpan);
 
         // Apply amplitude modulation
-        AMModulator.Apply(buffer, modulatorSpan, config.ModulatorDepth);
+        AMModulator.Apply(
+          buffer,
+          modulatorSpan,
+          config.ModulatorDepth
+        );
       }
-
-      // Apply layer weight
-      ApplyWeight(buffer, config.Weight);
 
       // Apply envelope
       _envelope.Process(buffer);
+
+      // Apply layer weight
+      ApplyWeight(buffer, config.Weight);
     }
 
     /// <summary>

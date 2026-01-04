@@ -97,8 +97,8 @@ namespace FreqGen.App.Services
         // Load preset (validates and initialize engine)
         _presetEngine?.LoadPreset(
           preset,
-          AudioSettings.Envelope.DefaultAttackSeconds,
-          AudioSettings.Envelope.DefaultReleaseSeconds
+          AudioSettings.EnvelopeSettings.DefaultAttackSeconds,
+          AudioSettings.EnvelopeSettings.DefaultReleaseSeconds
         );
 
         // Start platform audio thread

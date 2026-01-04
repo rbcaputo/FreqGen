@@ -93,8 +93,8 @@ namespace FreqGen.Presets.Presets
       // Initialize audio engine with new configuration
       _audioEngine.Initialize(
         _currentCoreConfigs.AsReadOnly(),
-        attackSeconds ?? AudioSettings.Envelope.DefaultAttackSeconds,
-        releaseSeconds ?? AudioSettings.Envelope.DefaultReleaseSeconds
+        attackSeconds ?? AudioSettings.EnvelopeSettings.DefaultAttackSeconds,
+        releaseSeconds ?? AudioSettings.EnvelopeSettings.DefaultReleaseSeconds
       );
 
       // Store active preset

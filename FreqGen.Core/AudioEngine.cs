@@ -86,13 +86,13 @@ namespace FreqGen.Core
     /// <exception cref="InvalidConfigurationException">Thrown if configs are invalid.</exception>
     public void Initialize(
       IReadOnlyList<LayerConfiguration> configs,
-      float attackSeconds = AudioSettings.Envelope.DefaultAttackSeconds,
-      float releaseSeconds = AudioSettings.Envelope.DefaultReleaseSeconds
+      float attackSeconds = AudioSettings.EnvelopeSettings.DefaultAttackSeconds,
+      float releaseSeconds = AudioSettings.EnvelopeSettings.DefaultReleaseSeconds
     )
     {
       ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-      if (configs == null || configs.Count == 0)
+      if (configs is null || configs.Count == 0)
         throw new InvalidConfigurationException(
           "At least one layer configuration is required.",
           nameof(configs)

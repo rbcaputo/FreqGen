@@ -15,13 +15,24 @@
     /// Applies amplitude modulation to an existing audio buffer.
     /// </summary>
     /// <param name="audioBuffer">The buffer containing carrier signal (modified in place).</param>
-    /// <param name="modulatorBuffer">The buffer containing the LFO/Modulator signal.</param>
+    /// <param name="modulationBuffer">The buffer containing the LFO/Modulator signal.</param>
     /// <param name="depth">The intensity of modulation (0.0 to 1.0).</param>
-    public static void Apply(Span<float> audioBuffer, ReadOnlySpan<float> modulatorBuffer, float depth)
+    public static void Apply(
+      Span<float> audioBuffer,
+      ReadOnlySpan<float> modulationBuffer,
+      float depth
+    )
     {
+      float effectiveDepth = Math.Clamp(depth, 0f, 1f);
+
+      if (effectiveDepth <= 0f)
+        return;
+
       for (int i = 0; i < audioBuffer.Length; i++)
-        // Ensures signal stays positive and follows the reference formula
-        audioBuffer[i] *= 1.0f + (depth * modulatorBuffer[i]);
+      {
+        float modulation = modulationBuffer[i]; // [-1, 1]
+        audioBuffer[i] *= 1.0f + effectiveDepth * modulation;
+      }
     }
   }
 }

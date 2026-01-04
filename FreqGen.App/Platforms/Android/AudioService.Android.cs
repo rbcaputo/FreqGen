@@ -15,9 +15,12 @@ namespace FreqGen.App.Services
     private Thread? _audioThread;
     private volatile bool _isAudioThreadRunning;
 
+    // Device derived buffer size in frames
+    private int _bufferFrames;
+
     // Pre-allocated buffers (no allocations in audio loop)
-    private readonly float[] _floatBuffer = new float[AudioSettings.RecommendedBufferSize];
-    private readonly short[] _pcmBuffer = new short[AudioSettings.RecommendedBufferSize];
+    private float[]? _floatBuffer;
+    private short[]? _pcmBuffer;
 
     partial void InitializePlatformAudio()
     {
@@ -25,26 +28,30 @@ namespace FreqGen.App.Services
 
       try
       {
-        // Query minimum buffer size
-        int minBufferSize = AudioTrack.GetMinBufferSize(
+        // Query minimum buffer size in bytes
+        int minBufferSizeBytes = AudioTrack.GetMinBufferSize(
           AudioSettings.SampleRate,
           ChannelOut.Mono,
           Encoding.Pcm16bit
         );
 
-        if (minBufferSize == (int)TrackStatus.ErrorBadValue)
-          throw new InvalidOperationException("Invalid audio format for this device");
+        if (minBufferSizeBytes == (int)TrackStatus.ErrorBadValue ||
+            minBufferSizeBytes <= 0)
+          throw new InvalidOperationException("Invalid AudioTrack buffer size");
+
+        // PCM16 → 2 bytes per frame
+        int minFrames = minBufferSizeBytes / sizeof(short);
+
+        // Choose a stable working size
+        _bufferFrames = minFrames * 2;
 
         // Use larger buffer for stability (4x minimum)
-        int bufferSizeInBytes = Math.Max(
-          minBufferSize,
-          AudioSettings.RecommendedBufferSize * sizeof(short) * 4
-        );
+        int bufferSizeBytes = _bufferFrames * sizeof(short);
 
         _logger.LogDebug(
-          "AudioTrack buffer: min={MinSize}, using={ActualSize}",
-          minBufferSize,
-          bufferSizeInBytes
+          "AudioTrack buffer: minFrames={Min}, usingFrames={Used}",
+          minFrames,
+          _bufferFrames
         );
 
         // Configure audio attributes
@@ -64,36 +71,37 @@ namespace FreqGen.App.Services
           throw new InvalidOperationException("Failed to create audio configuration");
 
         // Build AudioTrack
-        AudioTrack.Builder builder = new AudioTrack.Builder()
+        _audioTrack = new AudioTrack.Builder()
           .SetAudioAttributes(audioAttributes)
           .SetAudioFormat(audioFormat)
-          .SetBufferSizeInBytes(bufferSizeInBytes)
-          .SetTransferMode(AudioTrackMode.Stream);
+          .SetBufferSizeInBytes(bufferSizeBytes)
+          .SetTransferMode(AudioTrackMode.Stream)
+          .Build() ??
+            throw new InvalidOperationException("Failed to create AudioTrack");
 
         // Enable low-latency mode on Android 8.0+
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-        {
-          builder.SetPerformanceMode(AudioTrackPerformanceMode.LowLatency);
-          _logger.LogDebug("Low-latency mode enabled");
-        }
+        //if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        //{
+        //  builder.SetPerformanceMode(AudioTrackPerformanceMode.LowLatency);
+        //  _logger.LogDebug("Low-latency mode enabled");
+        //}
 
-        _audioTrack = builder.Build();
-
-        if (_audioTrack is null)
-          throw new InvalidOperationException("Failed to create AudioTrack");
+        // Allocate buffers once, based on device
+        _floatBuffer = new float[_bufferFrames];
+        _pcmBuffer = new short[_bufferFrames];
 
         _logger.LogInformation("Android AudioTrack initialized successfully");
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Failed to initialize Android audio");
-        throw new InvalidOperationException("Android audio initialization failed", ex);
+        throw;
       }
     }
 
     partial void StartPlatformAudio()
     {
-      if (_isAudioThreadRunning || _audioTrack is null || _engine is null)
+      if (_audioTrack is null || _engine is null || _isAudioThreadRunning)
         return;
 
       _logger.LogInformation("Starting Android audio thread");
@@ -119,7 +127,7 @@ namespace FreqGen.App.Services
       {
         _isAudioThreadRunning = false;
         _logger.LogError(ex, "Failed to start Android audio");
-        throw new InvalidOperationException("Failed to start Android audio", ex);
+        throw;
       }
     }
 
@@ -160,6 +168,8 @@ namespace FreqGen.App.Services
         _audioTrack?.Dispose();
         _audioTrack = null;
         _audioThread = null;
+        _floatBuffer = null;
+        _pcmBuffer = null;
 
         _logger.LogInformation("Android audio resources disposed");
       }
@@ -175,67 +185,68 @@ namespace FreqGen.App.Services
     /// </summary>
     private void AudioThreadLoop()
     {
-      // Set real-time audio priority
+      // Attempt to elevate thread priority for real-time audio
       try
       {
         Process.SetThreadPriority(Android.OS.ThreadPriority.UrgentAudio);
         _logger.LogDebug("Audio thread priority set to URGENT_AUDIO");
       }
-      catch (Exception ex)
-      {
-        _logger.LogWarning(ex, "Failed to set audio thread priority");
-      }
+      catch { /* Best effort only */ }
 
       _logger.LogInformation("Audio thread loop started");
 
-      while (_isAudioThreadRunning)
+      try
       {
-        try
+        while (_isAudioThreadRunning)
         {
           // Local copies for thread safety (avoid torn reads)
           AudioEngine? engine = _engine;
           AudioTrack? audioTrack = _audioTrack;
+          float[]? floatBuffer = _floatBuffer;
+          short[]? pcmBuffer = _pcmBuffer;
 
-          if (engine is null || audioTrack is null || !_isAudioThreadRunning)
+          if (engine is null || audioTrack is null ||
+              floatBuffer is null || pcmBuffer is null)
             break;
 
-          // Fill buffer from audio engine (HOT PATH)
-          engine.FillBuffer(_floatBuffer.AsSpan());
+          // Generate what device expects (HOT PATH)
+          engine.FillBuffer(floatBuffer.AsSpan());
 
           // Convert float [-1.0, 1.0] to PCM16 [-32768, 32767]
-          for (int i = 0; i < _floatBuffer.Length; i++)
+          for (int i = 0; i < _bufferFrames; i++)
           {
-            float sample = _floatBuffer[i];
-
-            // Clamp for safety (should already be clamped by engine)
-            sample = Math.Clamp(sample, -1.0f, 1.0f);
+            // Safety clamp (should already be clamped by engine)
+            float sample = Math.Clamp(floatBuffer[i], -1f, 1f);
 
             // Convert to PCM16
-            _pcmBuffer[i] = (short)(sample * 32767f);
+            pcmBuffer[i] = (short)(sample * 32767f);
           }
 
-          // Write to AudioTrack (blocking write)
-          int bytesWritten = audioTrack.Write(
-            _pcmBuffer,
-            0,
-            _pcmBuffer.Length,
-            WriteMode.Blocking
-          );
+          // Write entire buffer, handling partial writes
+          int samplesWritten = 0;
 
-          if (bytesWritten < 0)
+          while (samplesWritten < _bufferFrames && _isAudioThreadRunning)
           {
-            _logger.LogError("AudioTrack write error: {ErrorCode}", bytesWritten);
-            break;
+            int written = audioTrack.Write(
+              pcmBuffer,
+              samplesWritten,
+              _bufferFrames - samplesWritten,
+              WriteMode.Blocking
+            );
+
+            if (written < 0)
+              throw new InvalidOperationException(
+                $"AudioTrack write error: {written}"
+              );
+
+            samplesWritten += written;
           }
-        }
-        catch (Exception ex)
-        {
-          _logger.LogError(ex, "Audio thread loop error");
-          break;
         }
       }
-
-      _logger.LogInformation("Audio thread loop exited");
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Fatal error in audio thread loop");
+      }
     }
   }
 }

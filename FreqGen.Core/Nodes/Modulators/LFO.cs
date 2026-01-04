@@ -13,12 +13,16 @@ namespace FreqGen.Core.Nodes.Modulators
     /// Control rate decimation factor.
     /// LFO updates once per this many samples to save battery.
     /// </summary>
-    private const int ControlRate = 64;
+    private const int ControlRate = 16;
 
     private double _phase;
     private double _phaseIncrement;
+
     private float _currentValue;
+    private float _nextValue;
+
     private int _sampleCounter;
+    private int _interpCounter;
 
     /// <summary>
     /// Set the LFO frequency (typically 0.5-30Hz).
@@ -45,7 +49,10 @@ namespace FreqGen.Core.Nodes.Modulators
         // Update at control rate only
         if (_sampleCounter++ % ControlRate == 0)
         {
-          _currentValue = (float)Math.Sin(_phase);
+          _currentValue = _nextValue;
+          _nextValue = (float)Math.Sin(_phase);
+
+          _interpCounter = 0;
 
           // Increment and wrap phase
           _phase += _phaseIncrement;
@@ -53,7 +60,9 @@ namespace FreqGen.Core.Nodes.Modulators
             _phase -= Math.Tau;
         }
 
-        buffer[i] = _currentValue;
+        float t = (float)_interpCounter / ControlRate;
+        buffer[i] = _currentValue + t * (_nextValue - _currentValue);
+        _interpCounter++;
       }
     }
 
@@ -66,7 +75,9 @@ namespace FreqGen.Core.Nodes.Modulators
     {
       _phase = 0.0;
       _currentValue = 0.0f;
+      _nextValue = 0.0f;
       _sampleCounter = 0;
+      _interpCounter = 0;
     }
   }
 }

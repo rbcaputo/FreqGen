@@ -8,6 +8,9 @@
     private float _current = initialValue;
     private float _target = initialValue;
 
+    /// <summary>
+    /// 
+    /// </summary>
     public float Value => _current;
 
     /// <summary>

@@ -96,30 +96,30 @@ namespace FreqGen.Presets.Models
         LayerConfig layer = Layers[i];
 
         // Validate carrier frequency
-        if (!Core.AudioSettings.Carrier.IsValid(layer.CarrierHz, Core.AudioSettings.SampleRate))
+        if (!Core.AudioSettings.CarrierSettings.IsValid(layer.CarrierHz, Core.AudioSettings.SampleRate))
           throw new PresetValidationException(
             $"Layer {i}: Carrier frequency {layer.CarrierHz} Hz is outside valid range " +
-            $"({Core.AudioSettings.Carrier.Minimum}-{Core.AudioSettings.Carrier.Maximum}Hz).",
+            $"({Core.AudioSettings.CarrierSettings.Minimum}-{Core.AudioSettings.CarrierSettings.Maximum}Hz).",
             $"Layers[{i}].CarrierHz"
           );
 
         // Validate modulation frequency (if used)
-        if (layer.ModulationHz > 0.0f && !Core.AudioSettings.Modulation.IsValid(layer.ModulationHz))
+        if (layer.ModulationHz > 0.0f && !Core.AudioSettings.ModulationSettings.IsValid(layer.ModulationHz))
           throw new PresetValidationException(
             $"Layer {i}: Modulation frequency {layer.ModulationHz} Hz is outside valid range " +
-            $"({Core.AudioSettings.Modulation.Minimum}-{Core.AudioSettings.Modulation.Maximum}Hz).",
+            $"({Core.AudioSettings.ModulationSettings.Minimum}-{Core.AudioSettings.ModulationSettings.Maximum}Hz).",
             $"Layers[{i}].ModulationHz"
           );
 
         // Validate modulation depth
-        if (!Core.AudioSettings.Amplitude.IsValid(layer.ModulationDepth))
+        if (!Core.AudioSettings.AmplitudeSettings.IsValid(layer.ModulationDepth))
           throw new PresetValidationException(
             $"Layer {i}: Modulation depth {layer.ModulationDepth} is outside valid range (0.0-1.0).",
             $"Layers[{i}].ModulationDepth"
           );
 
         // Validate weight
-        if (!Core.AudioSettings.Amplitude.IsValid(layer.Weight))
+        if (!Core.AudioSettings.AmplitudeSettings.IsValid(layer.Weight))
           throw new PresetValidationException(
             $"Layer {i}: Weight {layer.Weight} is outside valid range (0.0-1.0).",
             $"Layers[{i}].Weight"

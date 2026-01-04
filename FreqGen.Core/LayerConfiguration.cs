@@ -21,10 +21,10 @@ namespace FreqGen.Core
       get => _carrierFrequency;
       init
       {
-        if (!AudioSettings.Carrier.IsValid(value, AudioSettings.SampleRate))
+        if (!AudioSettings.CarrierSettings.IsValid(value, AudioSettings.SampleRate))
           throw new InvalidConfigurationException(
             $"Carrier frequency {value} Hz is outside valid range " +
-            $"({AudioSettings.Carrier.Minimum}-{AudioSettings.Carrier.Maximum} Hz) " +
+            $"({AudioSettings.CarrierSettings.Minimum}-{AudioSettings.CarrierSettings.Maximum} Hz) " +
             $"or too close to Nyquist frequency.",
             nameof(CarrierFrequency)
           );
@@ -48,10 +48,10 @@ namespace FreqGen.Core
           return;
         }
 
-        if (!AudioSettings.Modulation.IsValid(value))
+        if (!AudioSettings.ModulationSettings.IsValid(value))
           throw new InvalidConfigurationException(
             $"Modulator frequency {value} Hz is outside valid range " +
-            $"({AudioSettings.Modulation.Minimum}-{AudioSettings.Modulation.Maximum}Hz).",
+            $"({AudioSettings.ModulationSettings.Minimum}-{AudioSettings.ModulationSettings.Maximum}Hz).",
             nameof(ModulatorFrequency)
           );
 
@@ -67,10 +67,10 @@ namespace FreqGen.Core
       get => _modulatorDepth;
       init
       {
-        if (!AudioSettings.Amplitude.IsValid(value))
+        if (!AudioSettings.AmplitudeSettings.IsValid(value))
           throw new InvalidConfigurationException(
             $"Modulator depth {value} is outside valid range " +
-            $"({AudioSettings.Amplitude.Minimum}-{AudioSettings.Amplitude.Maximum}).",
+            $"({AudioSettings.AmplitudeSettings.Minimum}-{AudioSettings.AmplitudeSettings.Maximum}).",
             nameof(ModulatorDepth)
           );
 
@@ -86,10 +86,10 @@ namespace FreqGen.Core
       get => _weight;
       init
       {
-        if (!AudioSettings.Amplitude.IsValid(value))
+        if (!AudioSettings.AmplitudeSettings.IsValid(value))
           throw new InvalidConfigurationException(
             $"Layer weight {value} is outside valid range " +
-            $"({AudioSettings.Amplitude.Minimum}-{AudioSettings.Amplitude.Maximum}).",
+            $"({AudioSettings.AmplitudeSettings.Minimum}-{AudioSettings.AmplitudeSettings.Maximum}).",
             nameof(Weight)
           );
 
@@ -110,7 +110,7 @@ namespace FreqGen.Core
     /// <exception cref="InvalidConfigurationException">Thrown if validation fails.</exception>
     public void ValidateForSampleRate(float sampleRate)
     {
-      if (!AudioSettings.Carrier.IsValid(_carrierFrequency, sampleRate))
+      if (!AudioSettings.CarrierSettings.IsValid(_carrierFrequency, sampleRate))
         throw new InvalidConfigurationException(
           $"Carrier frequency {_carrierFrequency} Hz exceeds Nyquist limit " +
           $"for sample rate {sampleRate}Hz.",

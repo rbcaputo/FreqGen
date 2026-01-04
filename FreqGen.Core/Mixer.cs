@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FreqGen.Core
 {
@@ -34,8 +35,8 @@ namespace FreqGen.Core
     /// <exception cref="ArgumentException">Thrown if layerCount exceeds max.</exception>
     public void Initialize(
       int layerCount, float sampleRate,
-      float attackSeconds = AudioSettings.Envelope.DefaultAttackSeconds,
-      float releaseSeconds = AudioSettings.Envelope.DefaultReleaseSeconds
+      float attackSeconds = AudioSettings.EnvelopeSettings.DefaultAttackSeconds,
+      float releaseSeconds = AudioSettings.EnvelopeSettings.DefaultReleaseSeconds
     )
     {
       if (layerCount <= 0 || layerCount > AudioSettings.MaxLayers)
@@ -89,8 +90,14 @@ namespace FreqGen.Core
         MixBuffers(outputBuffer, tempSpan);
       }
 
-      // Apply soft limiting to prevent clipping
-      ApplySoftLimiter(outputBuffer);
+      // Deterministic headroom scaling
+      float normalizationGain = 0.8f / Math.Max(1, layersToRender);
+
+      for (int i = 0; i < outputBuffer.Length; i++)
+        outputBuffer[i] *= normalizationGain;
+
+      // Safety clamp (should almost never engage)
+      SafetyClamp(outputBuffer);
     }
 
     /// <summary>
@@ -105,30 +112,13 @@ namespace FreqGen.Core
     }
 
     /// <summary>
-    /// Applies soft limiting with headroom to prevent harsh clipping.
-    /// Uses tanh-style soft clipping for musical saturation.
+    /// 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static void ApplySoftLimiter(Span<float> buffer)
+    private static void SafetyClamp(Span<float> buffer)
     {
-      const float headroom = 0.95f; // -0.44 dB headroom
-      const float threshold = 0.8f;  // Start soft clipping at -1.94 dB
-
       for (int i = 0; i < buffer.Length; i++)
-      {
-        float sample = buffer[i];
-
-        // Apply headroom scaling
-        sample *= headroom;
-
-        // Soft clip if above threshold
-        if (MathF.Abs(sample) > threshold)
-          // Tanh soft clipping (smooth saturation)
-          sample = MathF.Tanh(sample * 1.5f);
-
-        // Hard safety clamp (should never trigger if soft clip works)
-        buffer[i] = Math.Clamp(sample, -1.0f, 1.0f);
-      }
+        buffer[i] = Math.Clamp(buffer[i], -1.0f, 1.0f);
     }
 
     /// <summary>

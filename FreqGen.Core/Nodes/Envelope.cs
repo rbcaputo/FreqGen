@@ -28,17 +28,21 @@ namespace FreqGen.Core.Nodes
     /// <param name="releaseSeconds">Time to fade out (typically 30-60 seconds).</param>
     /// <param name="sampleRate">Current system sample rate.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Configure(float attackSeconds, float releaseSeconds, float sampleRate)
+    public void Configure(
+      float attackSeconds,
+      float releaseSeconds,
+      float sampleRate
+    )
     {
       // Exponential coefficient: 1.0 / (time * sampleRate)
       // Larger coefficient = faster fade
       _attackCoefficient =
         1.0f / (MathF.Max(
-          AudioSettings.Envelope.MinimumSeconds, attackSeconds) * sampleRate
+          AudioSettings.EnvelopeSettings.MinimumSeconds, attackSeconds) * sampleRate
         );
       _releaseCoefficient =
         1.0f / (MathF.Max(
-          AudioSettings.Envelope.MinimumSeconds, releaseSeconds) * sampleRate
+          AudioSettings.EnvelopeSettings.MinimumSeconds, releaseSeconds) * sampleRate
         );
     }
 
@@ -62,7 +66,8 @@ namespace FreqGen.Core.Nodes
       for (int i = 0; i < buffer.Length; i++)
       {
         // Select coefficient based on fade direction
-        float coefficient = _current < _target ? _attackCoefficient : _releaseCoefficient;
+        float coefficient =
+          _target > _current ? _attackCoefficient : _releaseCoefficient;
 
         // Exponential smoothing: current += (target - current) * coeff
         _current += (_target - _current) * coefficient;

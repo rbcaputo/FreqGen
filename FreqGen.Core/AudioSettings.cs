@@ -7,12 +7,12 @@
   public static class AudioSettings
   {
     /// <summary>
-    /// Default high-fidelity sample rate (44.1kHz).
+    /// Default native mobile DAC sample rate (48kHz).
     /// </summary>
-    public const int SampleRate = 44100;
+    public const int SampleRate = 48000;
 
     /// <summary>
-    /// Recommended buffer size for mobile low-latency.
+    /// Recommended buffer size for mobile audio stability.
     /// Actual size may vary per platform audio callback.
     /// </summary>
     public const int RecommendedBufferSize = 1024;
@@ -31,7 +31,7 @@
     /// <summary>
     /// Constraints for Carrier frequencies.
     /// </summary>
-    public static class Carrier
+    public static class CarrierSettings
     {
       /// <summary>
       /// Minimum audible carrier frequency (20Hz).
@@ -71,7 +71,7 @@
     /// <summary>
     /// Constraints for Modulation (LFO) frequencies.
     /// </summary>
-    public static class Modulation
+    public static class ModulationSettings
     {
       /// <summary>
       /// Minimum modulation frequency (0.1Hz).
@@ -98,7 +98,7 @@
     /// <summary>
     /// Constraints for modulation depth and layer weights.
     /// </summary>
-    public static class Amplitude
+    public static class AmplitudeSettings
     {
       /// <summary>
       /// Minimum depth/weight (0.0 = off).
@@ -123,9 +123,9 @@
     }
 
     /// <summary>
-    /// Constants for smooth signal transitions.
+    /// Constraints for smooth signal transitions.
     /// </summary>
-    public static class Envelope
+    public static class EnvelopeSettings
     {
       /// <summary>
       /// Default attack time (10 seconds).
