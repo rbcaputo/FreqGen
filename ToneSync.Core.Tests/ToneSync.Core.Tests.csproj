@@ -22,8 +22,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.*" />
-  </ItemGroup>
-
 </Project>
