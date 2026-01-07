@@ -1,9 +1,9 @@
 # Preset Reference – Frequency Applications & Interpretations
-This document describes commonly claimed therapeutic and cultural interpretationsof specific audio frequencies.
+This document describes commonly claimed therapeutic and cultural interpretations of specific audio frequencies.
 
 **DISCLAIMER:**
 > The information in this document represents **historical claims, cultural traditions, and reported subjective experiences** – not medical facts or scientific consensus.\
-> ToneSync is a general-purpose audio signal generator. Any therapeutic effects are **user interpretations** of the DSP capabilities described in [DSP_REFERENCE](https://github.com/rbcaputo/tonesync/blob/main/Docs/DSP_REFERENCE.md).\
+> ToneSync is a general-purpose audio signal generator. Any therapeutic effects are **user interpretations** of the DSP capabilities described in [DSP_REFERENCE](DSP_REFERENCE.md).\
 > This is **not medical advice**. Do not use audio signals as a substitute for professional healthcare.
 
 ---
@@ -28,13 +28,13 @@ These refer to **modulation rates** (not carrier frequencies) that correspond to
 | **Theta** | 4-8Hz | Deep meditation, creativity, hypnagogic states, memory consolidation | AM or binaural beats |
 | **Alpha** | 8-13Hz | Relaxed alertness, "flow-states", stress reduction, light meditation | AM or binaural beats |
 | **Beta** | 13-30Hz | Active thinking, focus, analytical processing, alertness | AM with faster modulation |
-| **Gamma** | 30-100Hz | High-level information processing, peak awereness, insight | Shallow AM (low-depth) |
+| **Gamma** | 30-100Hz | High-level information processing, peak awareness, insight | Shallow AM (low-depth) |
 
 ### Implementation notes
 ** Carrier frequencies** for brainwave presets are typically:
 * 100-500Hz range
 * Often harmonically related
-* The carrier is **not** the therapeutical claim – the **modulation rate** is
+* The carrier is **not** the therapeutic claim – the **modulation rate** is
 
 **Example:**
 * Carrier: 220Hz (audible tone)
@@ -59,12 +59,12 @@ These refer to **carrier frequencies** (audible pitches) claimed to have specifi
 | **174Hz** | Foundation, pain reduction, physical grounding | Restorative sessions | Pure tone or gentle harmonic |
 | **285Hz** | Cellular healing, tissue repair, energy field work | Recovery-focused listening | Pure tone |
 | **396Hz** | Liberation from guilt and fear, emotional release | Emotional processing work | Pure tone or layered |
-| **417Hz** | Facilitating change, clearing negative patterns | Transition periods, new begginings | Pure tone |
-| **528Hz** | "Miracle tone", DNS repair, transformation, love | Most researched frequency, general wellness | Pure tone or harmonic stack |
+| **417Hz** | Facilitating change, clearing negative patterns | Transition periods, new beginnings | Pure tone |
+| **528Hz** | "Miracle tone", DNA repair, transformation, love | Most researched frequency, general wellness | Pure tone or harmonic stack |
 | **639Hz** | Harmonizing relationships, communication, connection | Social harmony, empathy work | Pure tone |
-| **741Hz** | Expression, problem-solving, awakening intuition | Creative workm, self-expression | Pure tone |
+| **741Hz** | Expression, problem-solving, awakening intuition | Creative work, self-expression | Pure tone |
 | **852Hz** | Spiritual order, returning to truth, intuition | Spiritual practice, inner awareness | Pure tone |
-| **963Hz** | Divine consciousness, unity, enlightenment | Advance spiritual work | Pure tone (high frequency) |
+| **963Hz** | Divine consciousness, unity, enlightenment | Advanced spiritual work | Pure tone (high frequency) |
 
 ### Implementation Notes
 **Solfeggio presets typically use:**
@@ -104,7 +104,7 @@ These refer to **stereo frequency offsets** that create a perceived "beat" in th
 * **Right ear:** `R(t) = sin(2π·f_R·t)`
 * **Perceived beat:** `f_beat = |f_R - f_L|`
 
-***Example:**
+**Example:**
 * Left: 200Hz
 * Right: 210Hz
 * Perceived beat: 10Hz (Alpha range)
@@ -118,7 +118,7 @@ These refer to **stereo frequency offsets** that create a perceived "beat" in th
 ---
 
 ## 4. Isochronic Tones
-These refer to **rythmic pulsing** using high-depth amplitude modulation or square wave gating.
+These refer to **rhythmic pulsing** using high-depth amplitude modulation or square wave gating.
 
 ### Reference Table – Isochronic Applications
 | Pulse Rate | Claimed effect | Common Usage | Implementation |
@@ -190,7 +190,7 @@ Frequencies below 80Hz that work through **mechanical sensation** more than hear
 |-------------|----------------------|-----------|
 | **Brainwave** | 20-45 minutes | Relaxation and meditation sessions |
 | **Solfeggio** | 20-30 minutes | Continuous tones require longer exposure |
-| **Binaural** | 15-30 minutes | Hadphone fatigue consideration |
+| **Binaural** | 15-30 minutes | Headphone fatigue consideration |
 | **Isochronic** | 10-20 minutes | More intense, shorter bursts |
 
 ---
@@ -227,8 +227,8 @@ The only **cognitively meaningful** parameters are:
 
  ## 9. Further Reading
  For the pure mathematical implementation of these concepts, see:
- * [DSP_REFERENCE.md](https://github.com/rbcaputo/tonesync/blob/main/Docs/DSP_REFERENCE.md) – Signal processing foundations
- * [README.md](https://github.com/rbcaputo/tonesync/blob/main/README.md) – Architecture and philosophy
+ * [DSP_REFERENCE.md](DSP_REFERENCE.md) – Signal processing foundations
+ * [README.md](tonesync/README.md) – Architecture and philosophy
 
 For scientific research on auditory entrainment:
 * Search academic databases for "auditory driving", "brainwave entrainment", "binaural beats"
