@@ -29,7 +29,7 @@ jobs:
         run: dotnet build ToneSync.Core/ToneSync.Core.csproj --configuration Release --no-restore
 
       - name: Run Core tests with coverage
-        run: dotnet test ToneSync.Core.Tests/ToneSync.Core.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
+        run: dotnet test ToneSync.Core.Tests/ToneSync.Core.Tests.csproj --configuration Release --no-build --results-directory coverage --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
