@@ -3,7 +3,7 @@ This document describes commonly claimed therapeutic and cultural interpretation
 
 **DISCLAIMER:**
 > The information in this document represents **historical claims, cultural traditions, and reported subjective experiences** – not medical facts or scientific consensus.\
-> ToneSync is a general-purpose audio signal generator. Any therapeutic effects are **user interpretations** of the DSP capabilities described in [DSP_REFERENCE]([link](https://github.com/rbcaputo/tonesync/blob/main/Docs/DSP_REFERENCE.md)).\
+> ToneSync is a general-purpose audio signal generator. Any therapeutic effects are **user interpretations** of the DSP capabilities described in [DSP_REFERENCE](https://github.com/rbcaputo/tonesync/blob/main/Docs/DSP_REFERENCE.md).\
 > This is **not medical advice**. Do not use audio signals as a substitute for professional healthcare.
 
 ---
@@ -227,8 +227,8 @@ The only **cognitively meaningful** parameters are:
 
  ## 9. Further Reading
  For the pure mathematical implementation of these concepts, see:
- * [DSP_REFERENCE.md]([link](https://github.com/rbcaputo/tonesync/blob/main/Docs/DSP_REFERENCE.md)) – Signal processing foundations
- * [README.md]([link](https://github.com/rbcaputo/tonesync/blob/main/README.md)) – Architecture and philosophy
+ * [DSP_REFERENCE.md](https://github.com/rbcaputo/tonesync/blob/main/Docs/DSP_REFERENCE.md) – Signal processing foundations
+ * [README.md](https://github.com/rbcaputo/tonesync/blob/main/README.md) – Architecture and philosophy
 
 For scientific research on auditory entrainment:
 * Search academic databases for "auditory driving", "brainwave entrainment", "binaural beats"
