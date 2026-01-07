@@ -1,11 +1,10 @@
 ﻿using System.Runtime.CompilerServices;
-using ToneSync.Core.Nodes;
 
 namespace ToneSync.Core.Nodes.Modulators
 {
   /// <summary>
   /// Low-Frequency Oscillator optimized for modulation.
-  /// Updates at a control rate (every 64 samples) to conserve CPU on mobile devices.
+  /// Updates at a control rate (every 16 samples) to conserve CPU on mobile devices.
   /// Double-precision phase accumulation prevents drift in long sessions.
   /// </summary>
   public sealed class LFO : IAudioNode

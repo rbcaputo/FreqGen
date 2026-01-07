@@ -214,4 +214,4 @@ The Preset reference covers:
 
 ## License
 Open source.\
-MIT License as defined in the repository [LICENSE](https://github.com/rbcaputo/tonesync/blob/main/LICENSE).
+MIT License as defined in the repository [LICENSE](/LICENSE).

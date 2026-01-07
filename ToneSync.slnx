@@ -4,4 +4,5 @@
   </Project>
   <Project Path="ToneSync.Core/ToneSync.Core.csproj" />
   <Project Path="ToneSync.Presets/ToneSync.Presets.csproj" />
+  <Project Path="ToneSync.Tests/ToneSync.Tests.csproj" Id="b764e1f7-22e4-40f1-9139-51bbdf642db3" />
 </Solution>
