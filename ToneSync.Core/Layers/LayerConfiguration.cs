@@ -1,4 +1,5 @@
-﻿using ToneSync.Core.Exceptions;
+﻿using ToneSync.Core.Engine;
+using ToneSync.Core.Exceptions;
 
 namespace ToneSync.Core.Layers
 {
@@ -12,6 +13,24 @@ namespace ToneSync.Core.Layers
     private readonly float _modulatorFrequency;
     private readonly float _modulatorDepth;
     private readonly float _weight;
+
+    /// <summary>
+    /// Channel routing for this layer.
+    /// </summary>
+    public ChannelMode ChannelMode { get; init; } = ChannelMode.Mono;
+
+    /// <summary>
+    /// Frequency offset between left and right channels (for binaural beats).
+    /// Only applies when ChannelMode is Stereo.
+    /// Positive values = right channel higher, negative = left channel higher.
+    /// </summary>
+    public float StereoFrequencyOffset { get; init; } = 0.0f;
+
+    /// <summary>
+    /// Pan position (-1.0 = full left, 0.0 = center, 1.0 = full right).
+    /// Only applies when ChannelMode is Mono (panned to stereo output).
+    /// </summary>
+    public float Pan { get; init; } = 0.0f;
 
     /// <summary>
     /// Gets the carrier (audible tone) frequency in Hz.

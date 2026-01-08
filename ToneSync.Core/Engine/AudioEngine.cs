@@ -5,7 +5,7 @@ using ToneSync.Core.Layers;
 namespace ToneSync.Core.Engine
 {
   /// <summary>
-  /// The primary entry point for the FreqGen DSP engine.
+  /// The primary entry point for the ToneSync DSP engine.
   /// Coordinates the Mixer and provides a thread-safe interface for UI and platform audio.
   /// Implements lock-free configuration updates via snapshot pattern.
   /// </summary>
@@ -31,6 +31,8 @@ namespace ToneSync.Core.Engine
     private bool _isInitialized;
     private bool _isPlaying;
     private bool _isDisposed;
+
+    private ChannelMode _channelMode = ChannelMode.Mono;
 
     /// <summary>
     /// Target master gain applied to the final output stage.
@@ -63,6 +65,11 @@ namespace ToneSync.Core.Engine
     /// Gets a value indicating whether the engine has been initialized.
     /// </summary>
     public bool IsInitialized => _isInitialized;
+
+    /// <summary>
+    /// Gets the current channel mode (Mono or Stereo).
+    /// </summary>
+    public ChannelMode ChannelMode => _channelMode;
 
     /// <summary>
     /// Linear output gain applied as the final stage before delivery to the platform.
@@ -112,11 +119,13 @@ namespace ToneSync.Core.Engine
     /// Must be called before Start().
     /// </summary>
     /// <param name="configs">The layer configurations to use.</param>
+    /// <param name="channelMode"></param>
     /// <param name="attackSeconds">Envelope attack time (default: 10s).</param>
     /// <param name="releaseSeconds">Envelope release time (default: 30s).</param>
     /// <exception cref="InvalidConfigurationException">Thrown if configs are invalid.</exception>
     public void Initialize(
       IReadOnlyList<LayerConfiguration> configs,
+      ChannelMode channelMode = ChannelMode.Mono,
       float attackSeconds = AudioSettings.EnvelopeSettings.DefaultAttackSeconds,
       float releaseSeconds = AudioSettings.EnvelopeSettings.DefaultReleaseSeconds
     )
@@ -141,8 +150,14 @@ namespace ToneSync.Core.Engine
 
       lock (_initializationLock)
       {
+        _channelMode = channelMode;
+
         // Initialize mixer with layer count
-        _mixer.Initialize(configs.Count, _sampleRate, attackSeconds, releaseSeconds);
+        _mixer.Initialize(
+          configs.Count, _sampleRate,
+          channelMode, attackSeconds,
+          releaseSeconds
+        );
 
         // Create initial snapshot
         UpdateConfigs(configs);
@@ -218,7 +233,7 @@ namespace ToneSync.Core.Engine
     }
 
     /// <summary>
-    /// Fills a provided buffer with generated audio.
+    /// Fills a provided mono buffer with generated audio.
     /// This is the HOT PATH called by platform audio callback.
     /// Must be allocation-free and real-time safe.
     /// </summary>
@@ -234,7 +249,7 @@ namespace ToneSync.Core.Engine
     /// Errors are stored and reported asynchronously via events or polling.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public void FillBuffer(Span<float> buffer)
+    public void FillMonoBuffer(Span<float> buffer)
     {
       ObjectDisposedException.ThrowIf(_isDisposed, this);
 
@@ -253,7 +268,7 @@ namespace ToneSync.Core.Engine
 
         // Render audio using snapshot (no locks needed)
         ReadOnlySpan<LayerConfiguration> configSpan = _configSnapshot.AsSpan();
-        _mixer.Render(buffer, _sampleRate, configSpan);
+        _mixer.RenderMono(buffer, _sampleRate, configSpan);
 
         // Reset error counter on success
         _consecutiveErrorCount = 0;
@@ -280,20 +295,77 @@ namespace ToneSync.Core.Engine
         }
       }
 
-      // Smooth master gain to avoid clicks
-      const float gainSlew = 0.001f; // ~100ms response at 48kHz
+      // Apply master gain and safety limit
+      ApplyMasterGainAndLimit(buffer);
+    }
 
-      for (int i = 0; i < buffer.Length; i++)
+    /// <summary>
+    /// Fills provided stereo buffers with generated audio (planar format).
+    /// This is the HOT PATH called by platform audio callback.
+    /// Must be allocation-free and real-time safe.
+    /// </summary>
+    /// <param name="leftBuffer">Left channel output buffer.</param>
+    /// <param name="rightBuffer">Right channel output buffer.</param>
+    /// <remarks>
+    /// CRITICAL: This method runs on a real-time audio thread.
+    /// - No allocations allowed
+    /// - No locks allowed
+    /// - No I/O operations allowed
+    /// - No logging/diagnostics allowed
+    /// The final output stage always applies master gain smoothing and a
+    /// hard safety limiter, even if rendering succeeds.
+    /// Errors are stored and reported asynchronously via events or polling.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public void FillStereoBuffer(Span<float> leftBuffer, Span<float> rightBuffer)
+    {
+      ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+      if (_channelMode == ChannelMode.Mono)
+        throw new InvalidOperationException(
+          "Engine is configured for mono output. Use FillBuffer() instead."
+        );
+
+      if (leftBuffer.Length != rightBuffer.Length)
+        throw new ArgumentException(
+          "Left and right buffers must have the same length."
+        );
+
+      if (!_isInitialized || !_isPlaying)
       {
-        _smoothedGain += (_masterGain - _smoothedGain) * gainSlew;
-
-        float sample = buffer[i] * _smoothedGain;
-
-        // Absolute safety ceiling (never remove)
-        buffer[i] = Math.Clamp(sample, -0.999f, 0.999f);
-
-        buffer[i] *= _outputGain;
+        leftBuffer.Clear();
+        rightBuffer.Clear();
+        return;
       }
+
+      try
+      {
+        if (_configDirty)
+          _configDirty = false;
+
+        ReadOnlySpan<LayerConfiguration> configSpan = _configSnapshot.AsSpan();
+        _mixer.RenderStereo(leftBuffer, rightBuffer, _sampleRate, configSpan);
+
+        _consecutiveErrorCount = 0;
+      }
+      catch (Exception ex)
+      {
+        _consecutiveErrorCount++;
+        _lastError = ex;
+        leftBuffer.Clear();
+        rightBuffer.Clear();
+
+        if (_consecutiveErrorCount >= MaxConsecutiveErrors)
+        {
+          _isPlaying = false;
+          _hasCriticalError = true;
+          ThreadPool.QueueUserWorkItem(_ => RaiseCriticalErrorAsync(ex));
+        }
+      }
+
+      // Apply master gain and safety limiting to both channels
+      ApplyMasterGainAndLimit(leftBuffer);
+      ApplyMasterGainAndLimit(rightBuffer);
     }
 
     /// <summary>
@@ -357,6 +429,28 @@ namespace ToneSync.Core.Engine
       _isDisposed = true;
 
       GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Applies smoothed master gain and safety limiting to a buffer.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ApplyMasterGainAndLimit(Span<float> buffer)
+    {
+      // Smooth master gain to avoid clicks
+      const float gainSlew = 0.001f; // ~100ms response at 48kHz
+
+      for (int i = 0; i < buffer.Length; i++)
+      {
+        _smoothedGain += (_masterGain - _smoothedGain) * gainSlew;
+
+        float sample = buffer[i] * _smoothedGain;
+
+        // Absolute safety ceiling (never remove)
+        buffer[i] = Math.Clamp(sample, -0.999f, 0.999f);
+
+        buffer[i] *= _outputGain;
+      }
     }
 
     /// <summary>

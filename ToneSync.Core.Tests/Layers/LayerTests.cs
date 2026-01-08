@@ -8,7 +8,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Inactive_Layer_Outputs_Silence()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 
       var buffer = new float[AudioSettings.RecommendedBufferSize / 2];
@@ -25,7 +25,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Active_Layer_Writes_Entire_Buffer()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 
       var buffer = new float[AudioSettings.RecommendedBufferSize / 2];
@@ -44,7 +44,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Envelope_Rises_When_Layer_Is_Active()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.5f);
 
       var buffer = new float[AudioSettings.RecommendedBufferSize / 2];
@@ -61,7 +61,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void AM_Modulation_Does_Not_Increase_Peak()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 
       var bufferNoAM = new float[AudioSettings.RecommendedBufferSize];
@@ -83,7 +83,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Zero_Weight_Generates_Silence()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 
       var buffer = new float[AudioSettings.RecommendedBufferSize / 2];
@@ -101,7 +101,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Does_Not_Generate_NaNs()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 
       var buffer = new float[AudioSettings.RecommendedBufferSize];
@@ -125,7 +125,7 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Reset_Clears_Envelope_And_Oscillators()
     {
-      var layer = new Layer();
+      var layer = new MonoLayer();
       layer.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 
       var buffer = new float[AudioSettings.RecommendedBufferSize / 2];
@@ -145,8 +145,8 @@ namespace ToneSync.Core.Tests.Layers
     [Fact]
     public void Is_Deterministic()
     {
-      var layerA = new Layer();
-      var layerB = new Layer();
+      var layerA = new MonoLayer();
+      var layerB = new MonoLayer();
       layerA.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
       layerB.Initialize(AudioSettings.SampleRate, 0.1f, 0.1f);
 

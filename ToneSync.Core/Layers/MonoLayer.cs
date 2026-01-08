@@ -16,7 +16,7 @@ namespace ToneSync.Core.Layers
   /// Configuration is provided as immutable data per render call,
   /// ensuring lock-free, deterministic execution.
   /// </summary>
-  public sealed class Layer
+  public sealed class MonoLayer
   {
     /// <summary>
     /// Fixed attenuation applied before amplitude modulation
