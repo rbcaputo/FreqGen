@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using ToneSync.Core;
 using ToneSync.Core.Engine;
+using ToneSync.Presets.Engine;
 using ToneSync.Presets.Models;
-using ToneSync.Presets.Presets;
 
 namespace ToneSync.App.Services
 {
@@ -17,6 +17,7 @@ namespace ToneSync.App.Services
     private AudioEngine? _engine;
     private PresetEngine? _presetEngine;
     private OutputProfile _outputProfile = OutputProfile.DeviceSpeaker;
+    private ChannelMode _channelMode = ChannelMode.Mono;
     private bool _isInitialized;
     private bool _isDisposed;
 
@@ -26,13 +27,15 @@ namespace ToneSync.App.Services
     private const int MaxInitRetries = 3;
     private int _initRetryCount;
 
+    public ChannelMode ChannelMode => _channelMode;
+
     public bool IsPlaying => _engine?.IsPlaying ?? false;
 
     public FrequencyPreset? CurrentPreset => _presetEngine?.ActivePreset;
 
     public event EventHandler<AudioErrorEventArgs>? AudioError;
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(ChannelMode channelMode = ChannelMode.Mono)
     {
       ObjectDisposedException.ThrowIf(_isDisposed, this);
 
@@ -41,12 +44,16 @@ namespace ToneSync.App.Services
 
       try
       {
-        _logger.LogInformation("Initializing audio service...");
+        _logger.LogInformation(
+          "Initializing audio service in {Mode} mode",
+          _channelMode
+        );
 
-        // Create core audio engine
+        _channelMode = channelMode;
+
+        // Create core audio engine with channel mode
         _engine = new(AudioSettings.SampleRate);
         _engine.SetMasterGain(_masterGain); // Core engine handles smoothing internally
-
         // Subscribe to critical errors
         _engine.CriticalError += OnEngineCriticalError;
 
@@ -59,7 +66,10 @@ namespace ToneSync.App.Services
         _isInitialized = true;
         _initRetryCount = 0;
 
-        _logger.LogInformation("Audio service initialized successfully");
+        _logger.LogInformation(
+          "Audio service initialized successfully in {Mode} mode",
+          _channelMode
+        );
       }
       catch (Exception ex)
       {
@@ -120,7 +130,7 @@ namespace ToneSync.App.Services
       if (!_isInitialized)
       {
         _logger.LogInformation("Audio not initialized, initializing now...");
-        await InitializeAsync();
+        await InitializeAsync(_channelMode);
       }
 
       try
@@ -140,6 +150,7 @@ namespace ToneSync.App.Services
         // Load preset (validates and initialize engine)
         _presetEngine?.LoadPreset(
           preset,
+          _channelMode,
           AudioSettings.EnvelopeSettings.DefaultAttackSeconds,
           AudioSettings.EnvelopeSettings.DefaultReleaseSeconds
         );

@@ -2,8 +2,9 @@
 using ToneSync.Core.Engine;
 using ToneSync.Core.Layers;
 using ToneSync.Presets.Models;
+using ToneSync.Presets.Presets;
 
-namespace ToneSync.Presets.Presets
+namespace ToneSync.Presets.Engine
 {
   /// <summary>
   /// Manages the selection, loading, and state tracking of frequency presets.

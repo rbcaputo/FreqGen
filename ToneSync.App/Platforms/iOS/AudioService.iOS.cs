@@ -2,12 +2,14 @@
 using AVFoundation;
 using Foundation;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
+using ToneSync.Core;
 
 namespace ToneSync.App.Services
 {
   /// <summary>
   /// iOS-specific audio implementation using AVAudioEngine.
-  /// Optimized for Core Audio real-time rendering.
+  /// Supports both mono and stereo output with planar-to-interleaved conversion.
   /// </summary>
   public sealed partial class AudioService
   {
@@ -15,8 +17,10 @@ namespace ToneSync.App.Services
     private AVAudioSourceNode? _sourceNode;
     private AVAudioFormat? _audioFormat;
 
-    // Pre-allocated render buffer (no allocations in callback)
-    private readonly float[] _iosRenderBuffer = new float[ToneSync.Core.AudioSettings.MaxBufferSize];
+    // Pre-allocated render buffers (planar format, no allocations in callback)
+    private readonly float[] _monoRenderBuffer = new float[Core.AudioSettings.MaxBufferSize];
+    private readonly float[] _leftRenderBuffer = new float[Core.AudioSettings.MaxBufferSize];
+    private readonly float[] _rightRenderBuffer = new float[Core.AudioSettings.MaxBufferSize];
 
     partial void InitializePlatformAudio()
     {
@@ -24,10 +28,13 @@ namespace ToneSync.App.Services
 
       try
       {
+        // Determine audio mode from engine
+        _channelMode = _engine?.ChannelMode ?? ChannelMode.Mono;
+        uint channelCount = (uint)Core.AudioSettings.ChannelSettings.GetChannelCount(_channelMode);
+
         // Configure audio session for playback
         AVAudioSession audioSession = AVAudioSession.SharedInstance();
 
-        // SetCategory requires NSString, not AVAudioSessionCategory enum
         bool categoryResult = audioSession.SetCategory(
           AVAudioSession.CategoryPlayback,
           out NSError sessionError
@@ -45,15 +52,18 @@ namespace ToneSync.App.Services
             $"Failed to activate audio session: {sessionError?.LocalizedDescription ?? "Unknown error"}"
           );
 
-        _logger.LogDebug("Audio session configured: Category=Playback");
+        _logger.LogDebug(
+          "Audio session configured: Category=Playback, Mode={Mode}",
+          _channelMode
+        );
 
         // Create audio engine
         _avAudioEngine = new();
 
-        // Create audio format (mono, 44.1kHz, float32)
+        // Create audio format (mono or stereo, 48kHz, float32)
         _audioFormat = new(
-          sampleRate: ToneSync.Core.AudioSettings.SampleRate,
-          channels: 1
+          sampleRate: Core.AudioSettings.SampleRate,
+          channels: channelCount
         );
 
         if (_audioFormat is null)
@@ -89,7 +99,10 @@ namespace ToneSync.App.Services
         // Prepare engine for playback
         _avAudioEngine.Prepare();
 
-        _logger.LogInformation("iOS AVAudioEngine initialized successfully");
+        _logger.LogInformation(
+          "iOS AVAudioEngine initialized successfully in {Mode} mode",
+          _channelMode
+        );
       }
       catch (Exception ex)
       {
@@ -114,7 +127,7 @@ namespace ToneSync.App.Services
             $"Failed to start audio engine: {error.LocalizedDescription}"
           );
 
-        _logger.LogInformation("iOS audio engine started");
+        _logger.LogInformation("iOS audio engine started in {Mode} mode", _channelMode);
       }
       catch (Exception ex)
       {
@@ -183,48 +196,84 @@ namespace ToneSync.App.Services
 
       try
       {
-        // Get audio buffer from AudioBuffers
-        // Access the first buffer
-        AudioBuffer buffer = audioBuffers[0];
-
-        if (buffer.Data == IntPtr.Zero)
-          return -1; // Error: no buffer
-
-        unsafe
+        // Validate frame count
+        if (frameCount > _monoRenderBuffer.Length)
         {
-          float* outputPtr = (float*)buffer.Data;
+          // Log on background thread
+          Task.Run(() => _logger.LogWarning(
+            "Frame count {FrameCount} exceeds buffer size {BufferSize}",
+            frameCount, _monoRenderBuffer.Length
+          ));
 
-          // Validate frame count
-          if (frameCount > _iosRenderBuffer.Length)
-          {
-            // Log on background thread (not in render callback)
-            Task.Run(() => _logger.LogWarning(
-              "Frame count {FrameCount} exceeds buffer size {BufferSize}, clamping",
-              frameCount,
-              _iosRenderBuffer.Length
-            ));
-
-            frameCount = (uint)_iosRenderBuffer.Length;
-          }
-
-          // Fill buffer from audio engine (HOT PATH)
-          Span<float> renderSpan = _iosRenderBuffer.AsSpan(0, (int)frameCount);
-          _engine.FillBuffer(renderSpan);
-
-          // Copy to Core Audio buffer
-          for (int i = 0; i < frameCount; i++)
-            outputPtr[i] = _iosRenderBuffer[i];
-
-          return 0; // noErr
+          frameCount = (uint)_monoRenderBuffer.Length;
         }
+
+        if (_channelMode == ChannelMode.Stereo)
+          return RenderStereo(frameCount, audioBuffers);
+        else
+          return RenderMono(frameCount, audioBuffers);
       }
       catch (Exception ex)
       {
         // CRITICAL: Never throw from audio callback
-        // Log on background thread
         Task.Run(() => _logger.LogError(ex, "iOS render callback error"));
         return -1; // Error
       }
+    }
+
+    /// <summary>
+    /// Renders mono audio into Core Audio buffer.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe int RenderMono(uint frameCount, AudioBuffers audioBuffers)
+    {
+      AudioBuffer buffer = audioBuffers[0];
+
+      if (buffer.Data == IntPtr.Zero)
+        return -1;
+
+      float* outputPtr = (float*)buffer.Data;
+
+      // Generate mono audio
+      Span<float> renderSpan = _monoRenderBuffer.AsSpan(0, (int)frameCount);
+      _engine?.FillMonoBuffer(renderSpan);
+
+      // Copy to Core audio buffer
+      for (int i = 0; i < frameCount; i++)
+        outputPtr[i] = _monoRenderBuffer[i];
+
+      return 0;
+    }
+
+    /// <summary>
+    /// Renders stereo audio (planar) and converts to interleaved format.
+    /// Core Audio expects interleaved stereo: [L, R, L, R, ...]
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe int RenderStereo(uint frameCount, AudioBuffers audioBuffers)
+    {
+      // For stereo, Core audio uses one buffer with interleaved samples
+      AudioBuffer buffer = audioBuffers[0];
+
+      if (buffer.Data == IntPtr.Zero)
+        return -1;
+
+      float* outputPrt = (float*)buffer.Data;
+
+      // Generate stereo audio (planar format)
+      Span<float> leftSpan = _leftRenderBuffer.AsSpan(0, (int)frameCount);
+      Span<float> rightSpan = _rightRenderBuffer.AsSpan(0, (int)frameCount);
+      _engine?.FillStereoBuffer(leftSpan, rightSpan);
+
+
+      // Convert planar to interleaved
+      for (int i = 0; i < frameCount; i++)
+      {
+        outputPrt[i * 2] = _leftRenderBuffer[i]; // Left channel
+        outputPrt[i * 2 + 1] = _rightRenderBuffer[i]; // Right channel
+      }
+
+      return 0;
     }
   }
 }

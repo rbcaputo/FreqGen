@@ -1,6 +1,7 @@
 ﻿using Android.Media;
 using Android.OS;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
 using ToneSync.Core;
 using ToneSync.Core.Engine;
 
@@ -8,7 +9,7 @@ namespace ToneSync.App.Services
 {
   /// <summary>
   /// Android-specific audio implementation using AudioTrack.
-  /// Optimized for low-latency real-time audio playback.
+  /// Supports both mono and stereo output with planar-to-interleaved conversion.
   /// </summary>
   public sealed partial class AudioService
   {
@@ -19,8 +20,11 @@ namespace ToneSync.App.Services
     // Device derived buffer size in frames
     private int _bufferFrames;
 
-    // Pre-allocated buffers (no allocations in audio loop)
-    private float[]? _floatBuffer;
+    // Pre-allocated buffers (planar format for processing, no allocations in audio loop)
+    private float[]? _monoBuffer;
+    private float[]? _leftBuffer;
+    private float[]? _rightBuffer;
+    // Interleaved output buffer for AudioTrack
     private short[]? _pcmBuffer;
 
     partial void InitializePlatformAudio()
@@ -29,10 +33,20 @@ namespace ToneSync.App.Services
 
       try
       {
+        // Determine channel mode from engine
+        _channelMode = _engine?.ChannelMode ?? ChannelMode.Mono;
+
+        ChannelOut channelOut = _channelMode == ChannelMode.Stereo
+          ? ChannelOut.Stereo
+          : ChannelOut.Mono;
+
+        int channelCount = AudioSettings.ChannelSettings
+          .GetChannelCount(_channelMode);
+
         // Query minimum buffer size in bytes
         int minBufferSizeBytes = AudioTrack.GetMinBufferSize(
           AudioSettings.SampleRate,
-          ChannelOut.Mono,
+          channelOut,
           Encoding.Pcm16bit
         );
 
@@ -40,19 +54,20 @@ namespace ToneSync.App.Services
             minBufferSizeBytes <= 0)
           throw new InvalidOperationException("Invalid AudioTrack buffer size");
 
-        // PCM16 → 2 bytes per frame
-        int minFrames = minBufferSizeBytes / sizeof(short);
+        // PCM16 → 2 bytes per sample per channel
+        int minFrames = minBufferSizeBytes / (sizeof(short) * channelCount);
 
-        // Choose a stable working size
+        // Use larger buffer for stability
         _bufferFrames = minFrames * 2;
 
         // Use larger buffer for stability (4x minimum)
-        int bufferSizeBytes = _bufferFrames * sizeof(short);
+        _bufferFrames = minFrames * 2;
+        int bufferSizeBytes = _bufferFrames * sizeof(short) * channelCount;
 
         _logger.LogDebug(
-          "AudioTrack buffer: minFrames={Min}, usingFrames={Used}",
-          minFrames,
-          _bufferFrames
+          "AudioTrack buffer: mode={Mode}, minFrames={Min}, usingFrames={Used}, channels={Channels}",
+          _channelMode, minFrames,
+          _bufferFrames, channelCount
         );
 
         // Configure audio attributes
@@ -65,7 +80,7 @@ namespace ToneSync.App.Services
         AudioFormat? audioFormat = new AudioFormat.Builder()?
           .SetSampleRate(AudioSettings.SampleRate)?
           .SetEncoding(Encoding.Pcm16bit)?
-          .SetChannelMask(ChannelOut.Mono)?
+          .SetChannelMask(channelOut)?
           .Build();
 
         if (audioAttributes is null || audioFormat is null)
@@ -80,11 +95,22 @@ namespace ToneSync.App.Services
           .Build() ??
             throw new InvalidOperationException("Failed to create AudioTrack");
 
-        // Allocate buffers once, based on device
-        _floatBuffer = new float[_bufferFrames];
-        _pcmBuffer = new short[_bufferFrames];
+        // Allocate buffers based on channel mode
+        if (_channelMode == ChannelMode.Stereo)
+        {
+          _leftBuffer = new float[_bufferFrames];
+          _rightBuffer = new float[_bufferFrames];
+        }
+        else
+          _monoBuffer = new float[_bufferFrames];
 
-        _logger.LogInformation("Android AudioTrack initialized successfully");
+        // Interleaved PCM buffer (mono: 1x frames, stereo: 2x frames)
+        _pcmBuffer = new short[_bufferFrames * channelCount];
+
+        _logger.LogInformation(
+          "Android AudioTrack initialized successfully in {Mode} mode",
+          _channelMode
+        );
       }
       catch (Exception ex)
       {
@@ -109,13 +135,13 @@ namespace ToneSync.App.Services
         _isAudioThreadRunning = true;
         _audioThread = new(AudioThreadLoop)
         {
-          Name = "FreqGen-Android-AudioThread",
+          Name = "ToneSync-Android-AudioThread",
           IsBackground = true,
           Priority = System.Threading.ThreadPriority.Highest
         };
 
         _audioThread.Start();
-        _logger.LogInformation("Android audio thread started");
+        _logger.LogInformation("Android audio thread started in {Mode} mode", _channelMode);
       }
       catch (Exception ex)
       {
@@ -162,7 +188,9 @@ namespace ToneSync.App.Services
         _audioTrack?.Dispose();
         _audioTrack = null;
         _audioThread = null;
-        _floatBuffer = null;
+        _monoBuffer = null;
+        _leftBuffer = null;
+        _rightBuffer = null;
         _pcmBuffer = null;
 
         _logger.LogInformation("Android audio resources disposed");
@@ -187,7 +215,7 @@ namespace ToneSync.App.Services
       }
       catch { /* Best effort only */ }
 
-      _logger.LogInformation("Audio thread loop started");
+      _logger.LogInformation("Audio thread loop started in {Mode} mode", _channelMode);
 
       try
       {
@@ -196,35 +224,28 @@ namespace ToneSync.App.Services
           // Local copies for thread safety (avoid torn reads)
           AudioEngine? engine = _engine;
           AudioTrack? audioTrack = _audioTrack;
-          float[]? floatBuffer = _floatBuffer;
           short[]? pcmBuffer = _pcmBuffer;
 
-          if (engine is null || audioTrack is null ||
-              floatBuffer is null || pcmBuffer is null)
+          if (engine is null || audioTrack is null || pcmBuffer is null)
             break;
 
-          // Generate what device expects (HOT PATH)
-          engine.FillBuffer(floatBuffer.AsSpan());
+          // Render audio based on channel mode
 
-          // Convert float [-1.0, 1.0] to PCM16 [-32768, 32767]
-          for (int i = 0; i < _bufferFrames; i++)
-          {
-            // Safety clamp (should already be clamped by engine)
-            float sample = Math.Clamp(floatBuffer[i], -0.98f, 0.98f);
+          if (_channelMode == ChannelMode.Stereo)
+            RenderStereo(engine, pcmBuffer);
+          else
+            RenderMono(engine, pcmBuffer);
 
-            // Convert to PCM16
-            pcmBuffer[i] = (short)(sample * 32767f);
-          }
-
-          // Write entire buffer, handling partial writes
+          // Write entire buffer to AudioTrack, handling partial writes
           int samplesWritten = 0;
+          int totalSamples = pcmBuffer.Length;
 
-          while (samplesWritten < _bufferFrames && _isAudioThreadRunning)
+          while (samplesWritten < totalSamples && _isAudioThreadRunning)
           {
             int written = audioTrack.Write(
               pcmBuffer,
               samplesWritten,
-              _bufferFrames - samplesWritten,
+              totalSamples - samplesWritten,
               WriteMode.Blocking
             );
 
@@ -240,6 +261,57 @@ namespace ToneSync.App.Services
       catch (Exception ex)
       {
         _logger.LogError(ex, "Fatal error in audio thread loop");
+      }
+    }
+
+    /// <summary>
+    /// Renders mono audio and converts to PCM16.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void RenderMono(AudioEngine engine, short[] pcmBuffer)
+    {
+      float[]? monoBuffer = _monoBuffer;
+
+      if (monoBuffer is null)
+        return;
+
+      // Generate mono audio
+      engine.FillMonoBuffer(monoBuffer.AsSpan());
+
+      // Convert float [-1, 1] to PCM16 [-32768, 32767]
+      for (int i = 0; i < _bufferFrames; i++)
+      {
+        float sample = Math.Clamp(monoBuffer[i], -0.98f, 0.98f);
+        pcmBuffer[i] = (short)(sample * 32767f);
+      }
+    }
+
+    /// <summary>
+    /// Renders stereo audio (planar) and converts to interleaved PCM16.
+    /// Interleaved format: [L, R, L, R, L, R, ...]
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void RenderStereo(AudioEngine engine, short[] pcmBuffer)
+    {
+      float[]? leftBuffer = _leftBuffer;
+      float[]? rightBuffer = _rightBuffer;
+
+      if (leftBuffer is null || rightBuffer is null)
+        return;
+
+      // Generate stereo audio (planar format)
+      engine.FillStereoBuffer(leftBuffer.AsSpan(), rightBuffer.AsSpan());
+
+      // Convert planar float to interleaved PCM16
+      for (int i = 0; i < _bufferFrames; i++)
+      {
+        // Left channel
+        float leftSample = Math.Clamp(leftBuffer[i], -0.98f, 0.98f);
+        pcmBuffer[i * 2] = (short)(leftSample * 32767f);
+
+        // Right channel
+        float rightSample = Math.Clamp(rightBuffer[i], -0.98f, 0.98f);
+        pcmBuffer[i * 2 + 1] = (short)(rightSample * 32767f);
       }
     }
   }

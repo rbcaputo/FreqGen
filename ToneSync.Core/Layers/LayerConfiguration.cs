@@ -1,5 +1,4 @@
-﻿using ToneSync.Core.Engine;
-using ToneSync.Core.Exceptions;
+﻿using ToneSync.Core.Exceptions;
 
 namespace ToneSync.Core.Layers
 {

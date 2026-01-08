@@ -1,3 +1,4 @@
+using ToneSync.Core;
 using ToneSync.Presets.Models;
 using static ToneSync.App.Services.AudioService;
 
@@ -10,6 +11,23 @@ namespace ToneSync.App.Services
   public interface IAudioService : IAsyncDisposable
   {
     /// <summary>
+    /// Gets the current channel mode (Mono or Stereo).
+    /// </summary>
+    ChannelMode ChannelMode { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="profile"></param>
+    void SetOutputProfile(OutputProfile profile);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="gain"></param>
+    void SetMasterGain(float gain);
+
+    /// <summary>
     /// Gets a value indicating whether audio is currently playing.
     /// </summary>
     bool IsPlaying { get; }
@@ -20,17 +38,17 @@ namespace ToneSync.App.Services
     FrequencyPreset? CurrentPreset { get; }
 
     /// <summary>
-    /// Raised when a critical audio error occurs.
-    /// Event handlers are invoked on a background thread, not the audio callback thread.
-    /// </summary>
-    event EventHandler<AudioErrorEventArgs>? AudioError;
-
-    /// <summary>
     /// Initializes the audio system.
     /// Must be called before any playback operations.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if initialization fails.</exception>
     Task InitializeAsync();
+
+    /// <summary>
+    /// Attempts to reinitialize the audio system after a failure.
+    /// </summary>
+    /// <returns>True if retry succeeded; false otherwise.</returns>
+    Task<bool> RetryInitializationAsync();
 
     /// <summary>
     /// Loads and plays a frequency preset.
@@ -48,21 +66,9 @@ namespace ToneSync.App.Services
     Task StopAsync();
 
     /// <summary>
-    /// 
+    /// Raised when a critical audio error occurs.
+    /// Event handlers are invoked on a background thread, not the audio callback thread.
     /// </summary>
-    /// <param name="profile"></param>
-    void SetOutputProfile(OutputProfile profile);
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="gain"></param>
-    void SetMasterGain(float gain);
-
-    /// <summary>
-    /// Attempts to reinitialize the audio system after a failure.
-    /// </summary>
-    /// <returns>True if retry succeeded; false otherwise.</returns>
-    Task<bool> RetryInitializationAsync();
+    event EventHandler<AudioErrorEventArgs>? AudioError;
   }
 }
