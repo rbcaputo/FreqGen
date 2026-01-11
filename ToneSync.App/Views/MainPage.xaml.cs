@@ -1,4 +1,6 @@
-﻿using ToneSync.App.ViewModels;
+﻿using CommunityToolkit.Mvvm.Input;
+using ToneSync.App.ViewModels;
+using ToneSync.Presets.Models;
 
 namespace ToneSync.App.Views
 {
@@ -24,9 +26,27 @@ namespace ToneSync.App.Views
     {
       base.OnDisappearing();
 
-      // Ensure audio stops when page is not visible
-      if (_viewModel.IsPlaying)
-        _viewModel.StopCommand.ExecuteAsync(null);
+      // Playback continues in background
+      // User can stop via notification or by returning to app
+    }
+
+    /// <summary>
+    /// Navigate to preset detail page.
+    /// Exposed as a command for XAML binding.
+    /// </summary>
+    [RelayCommand]
+    private async Task NavigateToPreset(FrequencyPreset preset)
+    {
+      if (preset is null)
+        return;
+
+      await Shell.Current.GoToAsync(
+        nameof(PresetDetailPage),
+        new Dictionary<string, object>
+        {
+          ["Preset"] = preset
+        }
+      );
     }
   }
 }

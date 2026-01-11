@@ -23,10 +23,12 @@ namespace ToneSync.App
       builder.Services.AddSingleton<IAudioService, AudioService>();
 
       // Register ViewModels
-      builder.Services.AddTransient<MainViewModel>();
+      builder.Services.AddSingleton<MainViewModel>();
+      builder.Services.AddTransient<PresetDetailViewModel>();
 
       // Register Views
-      builder.Services.AddTransient<MainPage>();
+      builder.Services.AddSingleton<MainPage>();
+      builder.Services.AddTransient<PresetDetailPage>();
 
       builder.Services.AddLogging(logging =>
       {

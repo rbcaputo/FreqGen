@@ -55,4 +55,10 @@
     <ProjectReference Include="..\ToneSync.Presets\ToneSync.Presets.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <MauiXaml Update="Views\PresetDetailPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+  </ItemGroup>
+
 </Project>
