@@ -41,8 +41,9 @@ namespace ToneSync.App.Services
     /// Initializes the audio system.
     /// Must be called before any playback operations.
     /// </summary>
+    /// <param name="channelMode"></param>
     /// <exception cref="InvalidOperationException">Thrown if initialization fails.</exception>
-    Task InitializeAsync();
+    Task InitializeAsync(ChannelMode channelMode = ChannelMode.Mono);
 
     /// <summary>
     /// Attempts to reinitialize the audio system after a failure.

@@ -188,9 +188,9 @@ namespace ToneSync.Presets.Presets
       Tags = ["harmony", "balanced", "comprehensive"],
       Layers =
         [
-          LayerConfig.PureTone(396f, 0.33f, "Liberation"),
-          LayerConfig.PureTone(528f, 0.33f, "Transformation"),
-          LayerConfig.PureTone(639f, 0.33f, "Connection")
+          LayerConfig.PureTone(396f, 0.33f, description: "Liberation"),
+          LayerConfig.PureTone(528f, 0.33f, description: "Transformation"),
+          LayerConfig.PureTone(639f, 0.33f, description: "Connection")
         ]
     };
 

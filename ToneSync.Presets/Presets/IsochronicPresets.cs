@@ -32,7 +32,7 @@ namespace ToneSync.Presets.Presets
       Tags = ["nap", "recovery", "restorative", "intense"],
       Layers =
         [
-          LayerConfig.AmTone(120f, 3.0f, 0.95f, 1.0f, "Delta pulse carrier")
+          LayerConfig.AmTone(120f, 3.0f, 0.95f, description: "Delta pulse carrier")
         ]
     };
 
@@ -52,7 +52,7 @@ namespace ToneSync.Presets.Presets
       Tags = ["creative", "brainstorming", "innovation", "theta"],
       Layers =
         [
-          LayerConfig.AmTone(180f, 6.0f, 0.9f, 1.0f, "Theta pulse carrier")
+          LayerConfig.AmTone(180f, 6.0f, 0.9f, description: "Theta pulse carrier")
         ]
     };
 
@@ -72,7 +72,7 @@ namespace ToneSync.Presets.Presets
       Tags = ["stress-relief", "clarity", "alpha", "unwinding"],
       Layers =
         [
-          LayerConfig.AmTone(240f, 10.0f, 0.9f, 1.0f, "Alpha pulse carrier")
+          LayerConfig.AmTone(240f, 10.0f, 0.9f, description: "Alpha pulse carrier")
         ]
     };
 
@@ -92,7 +92,7 @@ namespace ToneSync.Presets.Presets
       Tags = ["focus", "study", "concentration", "cognitive", "beta"],
       Layers =
         [
-          LayerConfig.AmTone(300f, 15.0f, 1.0f, 1.0f, "Beta pulse carrier")
+          LayerConfig.AmTone(300f, 15.0f, 1.0f, description: "Beta pulse carrier")
         ]
     };
 
@@ -112,7 +112,7 @@ namespace ToneSync.Presets.Presets
       Tags = ["focus", "calm", "smr", "sustained"],
       Layers =
         [
-          LayerConfig.AmTone(260f, 13.0f, 0.8f, 1.0f, "SMR pulse carrier")
+          LayerConfig.AmTone(260f, 13.0f, 0.8f, description: "SMR pulse carrier")
         ]
     };
 

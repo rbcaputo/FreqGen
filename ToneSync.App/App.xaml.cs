@@ -1,6 +1,4 @@
-﻿using FreqGen.App;
-
-namespace ToneSync.App
+﻿namespace ToneSync.App
 {
   public sealed partial class App : Application
   {
