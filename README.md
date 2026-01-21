@@ -1,6 +1,6 @@
 # ToneSync
 [![Core CI](https://github.com/rbcaputo/tonesync/actions/workflows/core-ci.yml/badge.svg?branch=main)](https://github.com/rbcaputo/tonesync/actions/workflows/core-ci.yml)
-[![Core Tests](https://img.shields.io/codecov/c/github/rbcaputo/tonesync?label=Core%20Tests&logo=codecov)](https://codecov.io/gh/rbcaputo/tonesync)
+[![Core Tests](https://img.shields.io/codecov/c/github/rbcaputo/tonesync?label=Core%20Tests&logo=codecov)](https://codecov.io/gh/rbcaputo/scopetrack-web-api)
 
 ToneSync is a cross-platform, real-time audio signal generation engine focused on **precise, controllable, and deterministic DSP (Digital Signal Processing).**
 
